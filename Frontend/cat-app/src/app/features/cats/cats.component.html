@@ -1,0 +1,399 @@
+<div class="container-fluid py-4">
+  <ng-container *ngIf="isLoggedIn(); else loginRequired">
+    
+    <!-- Navegación entre vistas -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <ul class="nav nav-pills nav-fill">
+              <li class="nav-item">
+                <button 
+                  class="nav-link"
+                  [class.active]="currentView === 'detail'"
+                  (click)="switchView('detail')">
+                  <i class="bi bi-image me-2"></i>
+                  Vista Detallada
+                </button>
+              </li>
+              <li class="nav-item">
+                <button 
+                  class="nav-link"
+                  [class.active]="currentView === 'table'"
+                  (click)="switchView('table')">
+                  <i class="bi bi-table me-2"></i>
+                  Vista de Tabla
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista 1: Vista Detallada con Selector y Carrusel -->
+    <ng-container *ngIf="currentView === 'detail'">
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-gradient-primary text-white">
+              <h2 class="mb-0">
+                <i class="bi bi-heart-fill me-2"></i>
+                Explorador Detallado de Razas
+              </h2>
+              <p class="mb-0 opacity-75">Selecciona una raza para ver sus detalles</p>
+            </div>
+            
+            <div class="card-body">
+              <ng-container *ngIf="!loading; else loadingTemplate">
+                <!-- Selector de Raza -->
+                <div class="row mb-4">
+                  <div class="col-md-6">
+                    <label for="breedSelector" class="form-label">
+                      <i class="bi bi-list me-2"></i>
+                      Selecciona una Raza:
+                    </label>
+                    <select 
+                      id="breedSelector"
+                      class="form-select form-select-lg"
+                      [(ngModel)]="selectedBreedId"
+                      (change)="onBreedSelect()">
+                      <option value="">-- Selecciona una raza --</option>
+                      <option *ngFor="let breed of cats" [value]="breed.id">
+                        {{ breed.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Detalles de la Raza Seleccionada -->
+                <div *ngIf="selectedBreed" class="row">
+                  <!-- Carrusel de Imágenes -->
+                  <div class="col-lg-8 mb-4">
+                    <div class="card h-100">
+                      <div class="card-header">
+                        <h5 class="mb-0">
+                          <i class="bi bi-images me-2"></i>
+                          Galería de {{ selectedBreed.name }}
+                        </h5>
+                      </div>
+                      <div class="card-body p-0">
+                        <div *ngIf="breedImages.length > 0; else noImages" 
+                             id="breedCarousel" 
+                             class="carousel slide" 
+                             data-bs-ride="carousel">
+                          <div class="carousel-inner">
+                            <div *ngFor="let image of breedImages; let i = index" 
+                                 class="carousel-item"
+                                 [class.active]="i === 0">
+                              <img 
+                                [src]="image.url" 
+                                class="d-block w-100 carousel-image"
+                                [alt]="selectedBreed.name"
+                                loading="lazy">
+                            </div>
+                          </div>
+                          <button class="carousel-control-prev" type="button" 
+                                  data-bs-target="#breedCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                          </button>
+                          <button class="carousel-control-next" type="button" 
+                                  data-bs-target="#breedCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                          </button>
+                          <div class="carousel-indicators">
+                            <button *ngFor="let image of breedImages; let i = index"
+                                    type="button" 
+                                    data-bs-target="#breedCarousel" 
+                                    [attr.data-bs-slide-to]="i"
+                                    [class.active]="i === 0"></button>
+                          </div>
+                        </div>
+                        
+                        <ng-template #noImages>
+                          <div class="text-center py-5">
+                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No hay imágenes disponibles</p>
+                          </div>
+                        </ng-template>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Información de la Raza -->
+                  <div class="col-lg-4">
+                    <div class="card h-100">
+                      <div class="card-header">
+                        <h5 class="mb-0">
+                          <i class="bi bi-info-circle me-2"></i>
+                          Información de {{ selectedBreed.name }}
+                        </h5>
+                      </div>
+                      <div class="card-body">
+                        <div class="breed-info">
+                          <div class="info-item mb-3">
+                            <strong class="text-primary">
+                              <i class="bi bi-geo-alt me-2"></i>Origen:
+                            </strong>
+                            <span class="badge bg-primary ms-2">{{ selectedBreed.origin }}</span>
+                          </div>
+                          
+                          <div class="info-item mb-3">
+                            <strong class="text-primary">
+                              <i class="bi bi-clock me-2"></i>Esperanza de Vida:
+                            </strong>
+                            <span class="badge bg-success ms-2">{{ selectedBreed.life_span }} años</span>
+                          </div>
+                          
+                          <div class="info-item mb-3">
+                            <strong class="text-primary">
+                              <i class="bi bi-rulers me-2"></i>Peso:
+                            </strong>
+                            <span class="badge bg-info ms-2">{{ selectedBreed.weight?.metric || 'N/A' }} kg</span>
+                          </div>
+                          
+                          <div class="info-item mb-3">
+                            <strong class="text-primary">
+                              <i class="bi bi-heart me-2"></i>Temperamento:
+                            </strong>
+                            <p class="mt-2 text-muted">{{ selectedBreed.temperament }}</p>
+                          </div>
+                          
+                          <div class="info-item mb-3" *ngIf="selectedBreed.description">
+                            <strong class="text-primary">
+                              <i class="bi bi-journal-text me-2"></i>Descripción:
+                            </strong>
+                            <p class="mt-2 text-muted">{{ selectedBreed.description }}</p>
+                          </div>
+
+                          <!-- Características numéricas -->
+                          <div class="characteristics mt-4">
+                            <h6 class="text-primary mb-3">
+                              <i class="bi bi-bar-chart me-2"></i>Características
+                            </h6>
+                            
+                            <div class="char-item mb-2" *ngIf="selectedBreed.energy_level">
+                              <small class="text-muted">Nivel de Energía:</small>
+                              <div class="progress progress-sm">
+                                <div class="progress-bar bg-warning" 
+                                     [style.width.%]="(selectedBreed.energy_level * 20)">
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div class="char-item mb-2" *ngIf="selectedBreed.intelligence">
+                              <small class="text-muted">Inteligencia:</small>
+                              <div class="progress progress-sm">
+                                <div class="progress-bar bg-primary" 
+                                     [style.width.%]="(selectedBreed.intelligence * 20)">
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div class="char-item mb-2" *ngIf="selectedBreed.affection_level">
+                              <small class="text-muted">Nivel de Afecto:</small>
+                              <div class="progress progress-sm">
+                                <div class="progress-bar bg-danger" 
+                                     [style.width.%]="(selectedBreed.affection_level * 20)">
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Vista 2: Vista de Tabla con Búsqueda -->
+    <ng-container *ngIf="currentView === 'table'">
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-gradient-primary text-white">
+              <h2 class="mb-0">
+                <i class="bi bi-table me-2"></i>
+                Tabla de Razas de Gatos
+              </h2>
+              <p class="mb-0 opacity-75">Busca y explora todas las razas disponibles</p>
+            </div>
+            
+            <div class="card-body">
+              <!-- Filtro de Búsqueda -->
+              <div class="row mb-4">
+                <div class="col-md-8">
+                  <div class="input-group input-group-lg">
+                    <span class="input-group-text">
+                      <i class="bi bi-search"></i>
+                    </span>
+                    <input 
+                      type="text" 
+                      class="form-control"
+                      placeholder="Buscar por nombre, origen o temperamento..."
+                      [(ngModel)]="searchTerm"
+                      (keyup.enter)="performSearch()"
+                      (input)="performSearch()">
+                    <button 
+                      class="btn btn-primary" 
+                      type="button"
+                      (click)="performSearch()">
+                      <i class="bi bi-search me-2"></i>
+                      Buscar
+                    </button>
+                    <button 
+                      class="btn btn-outline-secondary" 
+                      type="button"
+                      (click)="clearSearch()">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <ng-container *ngIf="!loading; else loadingTemplate">
+                <!-- Tabla de Resultados -->
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                      <tr>
+                        <th scope="col">
+                          <i class="bi bi-image me-1"></i>
+                          Imagen
+                        </th>
+                        <th scope="col">
+                          <i class="bi bi-tag me-1"></i>
+                          Nombre
+                        </th>
+                        <th scope="col">
+                          <i class="bi bi-geo-alt me-1"></i>
+                          Origen
+                        </th>
+                        <th scope="col">
+                          <i class="bi bi-info-circle me-1"></i>
+                          Temperamento
+                        </th>
+                        <th scope="col">
+                          <i class="bi bi-star me-1"></i>
+                          Esperanza de Vida
+                        </th>
+                        <th scope="col">
+                          <i class="bi bi-rulers me-1"></i>
+                          Peso
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let cat of paginatedCats?.items" 
+                          class="cat-row"
+                          (click)="selectCatForDetail(cat)">
+                        <td>
+                          <img 
+                            [src]="cat.image?.url || 'assets/placeholder-cat.jpg'" 
+                            [alt]="cat.name"
+                            class="cat-image rounded-circle"
+                            loading="lazy">
+                        </td>
+                        <td>
+                          <strong class="text-primary">{{ cat.name }}</strong>
+                        </td>
+                        <td>
+                          <span class="badge bg-light text-dark border">
+                            <i class="bi bi-globe me-1"></i>
+                            {{ cat.origin }}
+                          </span>
+                        </td>
+                        <td>
+                          <small class="text-muted">
+                            {{ (cat.temperament || '').length > 50 ? (cat.temperament | slice:0:50) + '...' : cat.temperament }}
+                          </small>
+                        </td>
+                        <td>
+                          <span class="badge bg-success">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ cat.life_span }} años
+                          </span>
+                        </td>
+                        <td>
+                          <span class="badge bg-info">
+                            {{ cat.weight?.metric || 'N/A' }} kg
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <!-- Paginación -->
+                <app-pagination
+                  *ngIf="paginatedCats"
+                  [currentPage]="paginatedCats.currentPage"
+                  [totalPages]="paginatedCats.totalPages"
+                  [totalItems]="paginatedCats.totalItems"
+                  [itemsPerPage]="paginatedCats.itemsPerPage"
+                  (pageChange)="onPageChange($event)">
+                </app-pagination>
+                
+                <!-- Sin resultados -->
+                <div *ngIf="filteredCats.length === 0 && searchTerm" class="text-center py-5">
+                  <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                  <h4 class="mt-3 text-muted">No se encontraron resultados</h4>
+                  <p class="text-muted">
+                    No hay razas que coincidan con "{{ searchTerm }}"
+                  </p>
+                  <button class="btn btn-outline-primary" (click)="clearSearch()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    Mostrar todas las razas
+                  </button>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+    
+    <!-- Template de Carga -->
+    <ng-template #loadingTemplate>
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-3 text-muted">Cargando razas de gatos...</p>
+      </div>
+    </ng-template>
+    
+  </ng-container>
+  
+  <!-- Mensaje para usuarios no autenticados -->
+  <ng-template #loginRequired>
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-lg">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-lock-fill text-warning" style="font-size: 4rem;"></i>
+            <h3 class="mt-3 mb-3">Acceso Restringido</h3>
+            <p class="text-muted mb-4">
+              Debes iniciar sesión para explorar las razas de gatos disponibles.
+            </p>
+            <div class="d-grid gap-2 d-md-block">
+              <a href="/auth/login" class="btn btn-primary btn-lg me-2">
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+                Iniciar Sesión
+              </a>
+              <a href="/auth/register" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-person-plus me-2"></i>
+                Registrarse
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</div>
